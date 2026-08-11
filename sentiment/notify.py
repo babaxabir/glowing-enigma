@@ -11,6 +11,8 @@ from sentiment.models import SentimentReading
 
 DEFAULT_NTFY_SERVER = "https://ntfy.sh"
 VALID_TOPIC_PATTERN = re.compile(r"^[-_A-Za-z0-9]{1,64}$")
+ASSET_COLUMN_WIDTH = 10
+METRIC_SEPARATOR = " · "
 
 
 def _env(name: str, default: str = "") -> str:
@@ -45,18 +47,28 @@ def _validate_topic(topic: str) -> None:
 
 
 def _format_message(readings: list[SentimentReading]) -> str:
-    lines = []
+    lines = ["DAILY MARKET SENTIMENT", ""]
+
     for reading in readings:
-        line = f"{reading.emoji} {reading.asset}: {reading.score:.0f}/100 — {reading.label}"
-        if reading.detail:
-            line += f"\n   {reading.detail}"
-        lines.append(line)
-    return "\n\n".join(lines)
+        name = reading.asset.ljust(ASSET_COLUMN_WIDTH)
+        lines.append(f"{name} {reading.score:>3.0f}/100  {reading.label}")
+        if reading.metrics:
+            metric_line = METRIC_SEPARATOR.join(reading.metrics)
+            lines.append(f"{' ' * ASSET_COLUMN_WIDTH} {metric_line}")
+        lines.append("")
+
+    return "\n".join(lines).rstrip()
+
+
+def validate_notification_config() -> str:
+    """Validate config before fetching data so missing secrets fail fast."""
+    topic = _normalize_topic(_env("NTFY_TOPIC"))
+    _validate_topic(topic)
+    return topic
 
 
 def send_push_notification(readings: list[SentimentReading]) -> None:
-    topic = _normalize_topic(_env("NTFY_TOPIC"))
-    _validate_topic(topic)
+    topic = validate_notification_config()
 
     server = _env("NTFY_SERVER", DEFAULT_NTFY_SERVER).rstrip("/")
     if not server.startswith(("http://", "https://")):
@@ -68,10 +80,9 @@ def send_push_notification(readings: list[SentimentReading]) -> None:
     token = _env("NTFY_TOKEN")
 
     today = datetime.now(timezone.utc).strftime("%b %d, %Y")
-    # HTTP headers must be latin-1, so keep the title ASCII-only.
-    title = f"Market Sentiment - {today}"
+    title = f"Market Sentiment | {today}"
     message = _format_message(readings)
-    tags = "chart_with_upwards_trend,money_with_wings,gem"
+    tags = "bar_chart,oil_drum,bitcoin"
 
     headers = {
         "Title": title,

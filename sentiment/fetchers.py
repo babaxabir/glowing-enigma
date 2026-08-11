@@ -3,6 +3,7 @@ from __future__ import annotations
 import requests
 
 from sentiment.models import SentimentReading
+from sentiment.momentum import price_change_metrics
 
 CNN_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
 BTC_URL = "https://api.alternative.me/fng/?limit=1"
@@ -32,13 +33,14 @@ def fetch_btc_sentiment() -> SentimentReading:
     latest = payload["data"][0]
     score = float(latest["value"])
     label = _title_case_label(latest["value_classification"])
+    week_metric, month_metric = price_change_metrics("BTC-USD")
 
     return SentimentReading(
         asset="Bitcoin",
         score=score,
         label=label,
         source="Alternative.me Crypto Fear & Greed Index",
-        detail="Higher scores indicate greed; lower scores indicate fear.",
+        metrics=(week_metric, month_metric),
     )
 
 
@@ -53,13 +55,19 @@ def fetch_sp500_sentiment() -> SentimentReading:
 
     score = float(current["score"])
     label = _title_case_label(current["rating"])
+
+    metrics: list[str] = []
     week_ago = current.get("previous_1_week")
-    detail = f"Week ago: {week_ago:.0f}" if week_ago is not None else ""
+    month_ago = current.get("previous_1_month")
+    if week_ago is not None:
+        metrics.append(f"1w ago {week_ago:.0f}")
+    if month_ago is not None:
+        metrics.append(f"1m ago {month_ago:.0f}")
 
     return SentimentReading(
         asset="S&P 500",
         score=score,
         label=label,
         source="CNN Fear & Greed Index",
-        detail=detail,
+        metrics=tuple(metrics),
     )

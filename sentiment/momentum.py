@@ -5,7 +5,7 @@ import yfinance as yf
 from sentiment.models import SentimentReading
 
 
-def _score_to_label(score: float) -> str:
+def score_to_label(score: float) -> str:
     if score >= 75:
         return "Extreme Greed"
     if score >= 55:
@@ -43,10 +43,25 @@ def _pct_change(current: float, previous: float) -> float:
     return ((current - previous) / previous) * 100.0
 
 
-def fetch_gold_sentiment() -> SentimentReading:
-    history = yf.Ticker("GC=F").history(period="90d", auto_adjust=True)
+def price_change_metrics(ticker: str) -> tuple[str, str]:
+    history = yf.Ticker(ticker).history(period="90d", auto_adjust=True)
+    if history.empty or len(history) < 6:
+        raise RuntimeError(f"Unable to fetch enough price history for {ticker}")
+
+    closes = history["Close"].tolist()
+    latest = closes[-1]
+    week_ago = closes[-6] if len(closes) >= 6 else closes[0]
+    month_ago = closes[-22] if len(closes) >= 22 else closes[0]
+
+    week_change = _pct_change(latest, week_ago)
+    month_change = _pct_change(latest, month_ago)
+    return f"7d {week_change:+.1f}%", f"30d {month_change:+.1f}%"
+
+
+def fetch_momentum_sentiment(ticker: str, asset: str, source: str) -> SentimentReading:
+    history = yf.Ticker(ticker).history(period="90d", auto_adjust=True)
     if history.empty or len(history) < 30:
-        raise RuntimeError("Unable to fetch enough gold price history")
+        raise RuntimeError(f"Unable to fetch enough price history for {ticker}")
 
     closes = history["Close"].tolist()
     latest = closes[-1]
@@ -57,17 +72,34 @@ def fetch_gold_sentiment() -> SentimentReading:
     month_change = _pct_change(latest, month_ago)
     rsi = _rsi(closes)
 
-    # Blend momentum and RSI into a 0-100 sentiment score aligned with fear/greed bands.
     momentum_score = 50.0 + (week_change * 2.5) + (month_change * 1.0)
     score = max(0.0, min(100.0, (momentum_score * 0.55) + (rsi * 0.45)))
-    label = _score_to_label(score)
-
-    detail = f"7d {week_change:+.1f}% | 30d {month_change:+.1f}% | RSI {rsi:.0f}"
+    label = score_to_label(score)
 
     return SentimentReading(
-        asset="Gold",
+        asset=asset,
         score=score,
         label=label,
+        source=source,
+        metrics=(
+            f"7d {week_change:+.1f}%",
+            f"30d {month_change:+.1f}%",
+            f"RSI {rsi:.0f}",
+        ),
+    )
+
+
+def fetch_gold_sentiment() -> SentimentReading:
+    return fetch_momentum_sentiment(
+        ticker="GC=F",
+        asset="Gold",
         source="Gold futures (GC=F) momentum + RSI",
-        detail=detail,
+    )
+
+
+def fetch_oil_sentiment() -> SentimentReading:
+    return fetch_momentum_sentiment(
+        ticker="CL=F",
+        asset="Oil",
+        source="WTI crude (CL=F) momentum + RSI",
     )
