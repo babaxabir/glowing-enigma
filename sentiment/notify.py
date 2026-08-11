@@ -1,12 +1,18 @@
 from __future__ import annotations
 
-import json
 import os
 from datetime import datetime, timezone
 
 import requests
 
 from sentiment.models import SentimentReading
+
+DEFAULT_NTFY_SERVER = "https://ntfy.sh"
+
+
+def _env(name: str, default: str = "") -> str:
+    value = os.environ.get(name, default).strip()
+    return value or default
 
 
 def _format_message(readings: list[SentimentReading]) -> str:
@@ -20,12 +26,18 @@ def _format_message(readings: list[SentimentReading]) -> str:
 
 
 def send_push_notification(readings: list[SentimentReading]) -> None:
-    topic = os.environ.get("NTFY_TOPIC")
+    topic = _env("NTFY_TOPIC")
     if not topic:
         raise RuntimeError("NTFY_TOPIC environment variable is required")
 
-    server = os.environ.get("NTFY_SERVER", "https://ntfy.sh").rstrip("/")
-    token = os.environ.get("NTFY_TOKEN")
+    server = _env("NTFY_SERVER", DEFAULT_NTFY_SERVER).rstrip("/")
+    if not server.startswith(("http://", "https://")):
+        raise RuntimeError(
+            "NTFY_SERVER must include a scheme, e.g. https://ntfy.sh "
+            f"(got: {server!r})"
+        )
+
+    token = _env("NTFY_TOKEN")
 
     today = datetime.now(timezone.utc).strftime("%b %d, %Y")
     title = f"Market Sentiment — {today}"
@@ -35,23 +47,15 @@ def send_push_notification(readings: list[SentimentReading]) -> None:
     headers = {
         "Title": title,
         "Tags": ",".join(tags),
-        "Priority": "default",
+        "Priority": "3",
     }
     if token:
         headers["Authorization"] = f"Bearer {token}"
 
     response = requests.post(
         f"{server}/{topic}",
-        data=json.dumps(
-            {
-                "topic": topic,
-                "message": message,
-                "title": title,
-                "tags": tags,
-                "priority": 3,
-            }
-        ).encode("utf-8"),
-        headers={**headers, "Content-Type": "application/json; charset=utf-8"},
+        data=message.encode("utf-8"),
+        headers=headers,
         timeout=30,
     )
     response.raise_for_status()

@@ -30,5 +30,4 @@ jobs:
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
-          NTFY_SERVER: ${{ secrets.NTFY_SERVER }}
         run: python -m sentiment.main
