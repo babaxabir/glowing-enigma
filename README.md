@@ -45,13 +45,15 @@ Download **ntfy** on your phone:
 
 > **Important:** Anyone who knows your topic name can send you messages. Use a long random string and never share it publicly.
 
+> **Topic format:** Use only letters, numbers, dashes, and underscores (no spaces or full URLs). Good: `market-sentiment-a8f3k2`. Bad: `market sentiment`, `https://ntfy.sh/my-topic`.
+
 ### 3. Add GitHub secrets
 
 In your GitHub repo go to **Settings → Secrets and variables → Actions → New repository secret**:
 
 | Secret | Required | Description |
 |--------|----------|-------------|
-| `NTFY_TOPIC` | Yes | The topic name you subscribed to in step 2 |
+| `NTFY_TOPIC` | Yes | The topic name only (e.g. `market-sentiment-a8f3k2`), not a full URL |
 | `NTFY_TOKEN` | No | Bearer token if your topic is access-protected |
 | `NTFY_SERVER` | No | Custom ntfy server URL (default: `https://ntfy.sh`) |
 
