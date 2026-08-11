@@ -54,9 +54,15 @@ def _format_message(readings: list[SentimentReading]) -> str:
     return "\n\n".join(lines)
 
 
-def send_push_notification(readings: list[SentimentReading]) -> None:
+def validate_notification_config() -> str:
+    """Validate config before fetching data so missing secrets fail fast."""
     topic = _normalize_topic(_env("NTFY_TOPIC"))
     _validate_topic(topic)
+    return topic
+
+
+def send_push_notification(readings: list[SentimentReading]) -> None:
+    topic = validate_notification_config()
 
     server = _env("NTFY_SERVER", DEFAULT_NTFY_SERVER).rstrip("/")
     if not server.startswith(("http://", "https://")):

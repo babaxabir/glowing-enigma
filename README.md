@@ -68,6 +68,24 @@ To test immediately:
 
 You should receive a push notification within a minute.
 
+## Troubleshooting
+
+### `NTFY_TOPIC is empty` or "Missing NTFY_TOPIC secret"
+
+The GitHub secret is not set. Fix it:
+
+1. Open **github.com/babaxabir/glowing-enigma** → **Settings** → **Secrets and variables** → **Actions**
+2. Click **New repository secret**
+3. Name: `NTFY_TOPIC` (exact spelling)
+4. Value: your topic name only, e.g. `market-sentiment-a8f3k2`
+5. Re-run **Actions → Daily Market Sentiment → Run workflow**
+
+Use **Secrets**, not **Variables**. The value must match exactly what you subscribed to in the ntfy app.
+
+### `400 Bad Request` from ntfy
+
+Topic name has invalid characters. Use only letters, numbers, dashes, and underscores — no spaces, no full URLs.
+
 ## Run locally
 
 ```bash
