@@ -9,19 +9,20 @@ This repo runs on a GitHub Actions schedule and sends notifications through [ntf
 Each morning you'll get a notification like:
 
 ```
-DAILY MARKET SENTIMENT
-
-Gold        78/100  Extreme Greed
-           7d +8.7% · 30d +11.4% · RSI 71
-
-Oil         63/100  Greed
-           7d +9.0% · 30d +5.7% · RSI 45
-
-Bitcoin     29/100  Fear
-           7d +0.0% · 30d -3.3%
-
-S&P 500     65/100  Greed
-           1w ago 60 · 1m ago 47
+Hello Babak,
+Here is your today sentiment report:
+————————————————
+**Gold** | 78/100 | Extreme Greed
+7d +8.7% · 30d +11.4% · RSI 71
+————————————————
+**Oil** | 63/100 | Greed
+7d +9.0% · 30d +5.7% · RSI 45
+————————————————
+**Bitcoin** | 29/100 | Fear
+7d +0.0% · 30d -3.3%
+————————————————
+**S&P 500** | 65/100 | Greed
+1w ago 60 · 1m ago 47
 ```
 
 ### Data sources
@@ -62,6 +63,7 @@ In your GitHub repo go to **Settings → Secrets and variables → Actions → N
 |--------|----------|-------------|
 | `NTFY_TOPIC` | Yes | The topic name only (e.g. `market-sentiment-a8f3k2`), not a full URL |
 | `NTFY_TOKEN` | No | Bearer token if your topic is access-protected |
+| `RECIPIENT_NAME` | No | Name in the greeting (default: `Babak`) |
 | `NTFY_SERVER` | No | Custom ntfy server URL (default: `https://ntfy.sh`) |
 
 ### 4. Enable the workflow
