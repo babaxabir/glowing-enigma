@@ -30,4 +30,5 @@ jobs:
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
+          RECIPIENT_NAME: ${{ secrets.RECIPIENT_NAME }}
         run: python -m sentiment.main

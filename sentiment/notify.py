@@ -10,8 +10,9 @@ import requests
 from sentiment.models import SentimentReading
 
 DEFAULT_NTFY_SERVER = "https://ntfy.sh"
+DEFAULT_RECIPIENT_NAME = "Babak"
 VALID_TOPIC_PATTERN = re.compile(r"^[-_A-Za-z0-9]{1,64}$")
-ASSET_COLUMN_WIDTH = 10
+SECTION_SEPARATOR = "————————————————-"
 METRIC_SEPARATOR = " · "
 
 
@@ -46,18 +47,21 @@ def _validate_topic(topic: str) -> None:
         )
 
 
-def _format_message(readings: list[SentimentReading]) -> str:
-    lines = ["DAILY MARKET SENTIMENT", ""]
+def _format_message(readings: list[SentimentReading], recipient_name: str) -> str:
+    lines = [
+        f"Hello {recipient_name},",
+        "Here is your today sentiment report:",
+    ]
 
     for reading in readings:
-        name = reading.asset.ljust(ASSET_COLUMN_WIDTH)
-        lines.append(f"{name} {reading.score:>3.0f}/100  {reading.label}")
+        lines.append(SECTION_SEPARATOR)
+        lines.append(
+            f"**{reading.asset}** | {reading.score:.0f}/100 | {reading.label}"
+        )
         if reading.metrics:
-            metric_line = METRIC_SEPARATOR.join(reading.metrics)
-            lines.append(f"{' ' * ASSET_COLUMN_WIDTH} {metric_line}")
-        lines.append("")
+            lines.append(METRIC_SEPARATOR.join(reading.metrics))
 
-    return "\n".join(lines).rstrip()
+    return "\n".join(lines)
 
 
 def validate_notification_config() -> str:
@@ -78,16 +82,18 @@ def send_push_notification(readings: list[SentimentReading]) -> None:
         )
 
     token = _env("NTFY_TOKEN")
+    recipient_name = _env("RECIPIENT_NAME", DEFAULT_RECIPIENT_NAME)
 
     today = datetime.now(timezone.utc).strftime("%b %d, %Y")
-    title = f"Market Sentiment | {today}"
-    message = _format_message(readings)
+    title = f"Sentiment Report | {today}"
+    message = _format_message(readings, recipient_name)
     tags = "bar_chart,oil_drum,bitcoin"
 
     headers = {
         "Title": title,
         "Tags": tags,
         "Priority": "3",
+        "Markdown": "yes",
     }
     if token:
         headers["Authorization"] = f"Bearer {token}"
