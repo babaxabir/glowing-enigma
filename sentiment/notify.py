@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 from datetime import datetime, timezone
 
@@ -44,17 +45,23 @@ def send_push_notification(readings: list[SentimentReading]) -> None:
     message = _format_message(readings)
     tags = ["chart_with_upwards_trend", "money_with_wings", "gem"]
 
-    headers = {
-        "Title": title,
-        "Tags": ",".join(tags),
-        "Priority": "3",
-    }
+    headers = {"Content-Type": "application/json; charset=utf-8"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
 
+    # Use JSON body instead of Title header so Unicode (em dash, emojis) is safe.
     response = requests.post(
-        f"{server}/{topic}",
-        data=message.encode("utf-8"),
+        f"{server}/",
+        data=json.dumps(
+            {
+                "topic": topic,
+                "title": title,
+                "message": message,
+                "tags": tags,
+                "priority": 3,
+            },
+            ensure_ascii=False,
+        ).encode("utf-8"),
         headers=headers,
         timeout=30,
     )
