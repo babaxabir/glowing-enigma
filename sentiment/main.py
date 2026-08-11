@@ -3,13 +3,16 @@ from __future__ import annotations
 import sys
 
 from sentiment.fetchers import fetch_btc_sentiment, fetch_sp500_sentiment
-from sentiment.gold import fetch_gold_sentiment
-from sentiment.notify import send_push_notification
+from sentiment.momentum import fetch_gold_sentiment, fetch_oil_sentiment
+from sentiment.notify import send_push_notification, validate_notification_config
 
 
 def main() -> int:
+    validate_notification_config()
+
     readings = [
         fetch_gold_sentiment(),
+        fetch_oil_sentiment(),
         fetch_btc_sentiment(),
         fetch_sp500_sentiment(),
     ]
